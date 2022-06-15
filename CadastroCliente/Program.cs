@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.Configure<DadosDeConfiguracao>
     (builder.Configuration.GetSection("ClientStoreDatabase"));
+
 builder.Services.AddSingleton<ServicoCliente>();
 
 builder.Services.AddControllers();

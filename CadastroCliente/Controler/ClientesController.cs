@@ -15,11 +15,11 @@ namespace CadastroCliente.Controler
             _clienteColecao = servicoCliente;
 
         [HttpGet]
-        public async Task<List<cliente>> Get() =>
+        public async Task<List<Cliente>> Get() =>
             await _clienteColecao.GetAsync();
 
-        [HttpGet("{id:length(24)}")]
-        public async Task<ActionResult<cliente>> Get(string id)
+        [HttpGet("{Id:int}")]
+        public async Task<ActionResult<Cliente>> Get(int id)
         {
             var cliente = await _clienteColecao.GetAsync(id);
 
@@ -32,15 +32,16 @@ namespace CadastroCliente.Controler
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post(cliente cliente)
+        public async Task<IActionResult> Post(Cliente cliente)
         {
-            await _clienteColecao.CreateAsync(cliente);
-
-            return CreatedAtAction(nameof(Get), new { id = cliente.Id }, cliente);
+            if (await _clienteColecao.CreateAsync(cliente))
+                return Ok();
+            else
+                return NoContent();            
         }
 
-        [HttpPut("{id:length(24)}")]
-        public async Task<IActionResult> Update(string id, cliente cliente)
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id, Cliente cliente)
         {
             var cliente2 = await _clienteColecao.GetAsync(id);
 
@@ -49,15 +50,17 @@ namespace CadastroCliente.Controler
                 return NotFound();
             }
 
-            cliente.Id = cliente2.Id;
+            cliente.Id = cliente2.Id;            
 
-            await _clienteColecao.UpdateAsync(id, cliente);
-
-            return NoContent();
+            if (await _clienteColecao.UpdateAsync(id, cliente))
+                return Ok();
+            else
+                return NoContent();
+            
         }
 
-        [HttpDelete("{id:length(24)}")]
-        public async Task<IActionResult> Delete(string id)
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
         {
             var cliente = await _clienteColecao.GetAsync(id);
 
@@ -69,20 +72,30 @@ namespace CadastroCliente.Controler
             await _clienteColecao.RemoveAsync(id);
 
             return NoContent();
-         
         }
 
         [HttpGet("validar")]
         public async Task<IActionResult> validar(string Cpf,string Email)
         {
-            bool CpfValido = await _clienteColecao.validarCPF(Cpf);
-            bool EmailValido = await _clienteColecao.validarEmail(Email);
+            bool CpfValido = await _clienteColecao.validarCPF(Cpf, 0);
+            bool EmailValido = await _clienteColecao.validarEmail(Email, 0);
             if (CpfValido && EmailValido)
-                return Accepted("Resultado da busca pelo cliente, positiva!");
+                return Accepted();
             else
-                return NoContent();
-            
-        }    
+                return NoContent(); 
+        }
 
+        [HttpGet("Cpf")]
+        public async Task<ActionResult<Cliente>> Get(string cpf)
+        {
+            var cliente = await _clienteColecao.GetPorCpf(cpf);
+
+            if (cliente is null)
+            {
+                return NotFound();
+            }
+
+            return cliente;
+        }
     }
 }
