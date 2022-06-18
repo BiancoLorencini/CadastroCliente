@@ -6,7 +6,7 @@ namespace CadastroCliente.Servicos
 {
     public class ServicoCliente
     {
-        private readonly IMongoCollection<cliente> _clienteColecao;
+        private readonly IMongoCollection<Cliente> _clienteColecao;
 
         public ServicoCliente(IOptions<DadosDeConfiguracao> servicoCliente)
         {
@@ -14,39 +14,63 @@ namespace CadastroCliente.Servicos
 
             var mongoDBase = clienteMongo.GetDatabase(servicoCliente.Value.NomeBancoDados);
 
-            _clienteColecao = mongoDBase.GetCollection<cliente>(servicoCliente.Value.ClienteColecaoNome);
+            _clienteColecao = mongoDBase.GetCollection<Cliente>(servicoCliente.Value.ClienteColecaoNome);
         }
 
-        public async Task<List<cliente>> GetAsync() =>
+        public async Task<List<Cliente>> GetAsync() =>
             await _clienteColecao.Find(x => true).ToListAsync();
 
-        public async Task<cliente> GetAsync(string id) =>
-           await _clienteColecao.Find(x => x.Id == id).FirstOrDefaultAsync();
+        public async Task<Cliente> GetAsync(int id) =>              
+            await _clienteColecao.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-        public async Task CreateAsync(cliente cliente) =>
+        public async Task<bool> CreateAsync(Cliente cliente)
+        {
+            if (!await validarCliente(cliente))
+                return false;    
             await _clienteColecao.InsertOneAsync(cliente);
-
-        public async Task UpdateAsync(string id, cliente cliente) =>
+            return true;
+        }   
+        public async Task<bool> UpdateAsync(int id, Cliente cliente)
+        {
+            if (!await validarCliente(cliente))
+                return false;
             await _clienteColecao.ReplaceOneAsync(x => x.Id == id, cliente);
+            return true;
+        }        
 
-        public async Task RemoveAsync(string id) =>
+        public async Task RemoveAsync(int id) =>
             await _clienteColecao.DeleteOneAsync(x => x.Id == id);
 
-        public async Task<bool> validarCPF(string Cpf)
+        public async Task<bool> validarCPF(string cpf, int id)
         {
-            if (String.IsNullOrEmpty(Cpf))
-            {
+            if (String.IsNullOrEmpty(cpf))
                 return false;
-            }
-            return !await _clienteColecao.Find(x => String.Equals(x.Cpf, Cpf)).AnyAsync();
+
+            if (cpf.Length != 11)
+                return false;
+
+            if (!cpf.All(char.IsDigit))
+                return false;
+
+            return !await _clienteColecao.Find(x => (String.Equals(x.Cpf, cpf)) && (x.Id != id || id == 0)).AnyAsync();
         }
 
-        public async Task<bool> validarEmail(string email)
+        public async Task<bool> validarEmail(string email, int id)
         {
             if (String.IsNullOrEmpty(email))
                 return false;
-            return !await _clienteColecao.Find(x => String.Equals(x.Email, email)).AnyAsync();
-        }                     
+            return !await _clienteColecao.Find(x => String.Equals(x.Email, email) && (x.Id != id || id == 0)).AnyAsync();
+        }
+
+        public async Task<bool> validarCliente(Cliente cliente)
+        {
+            bool CpfValido = await validarCPF(cliente.Cpf, cliente.Id);
+            bool EmailValido = await validarEmail(cliente.Email, cliente.Id);
+            return (CpfValido && EmailValido);
+        }
+
+        public async Task<Cliente> GetPorCpf(string cpf) =>
+            await _clienteColecao.Find(x => String.Equals(x.Cpf, cpf)).FirstOrDefaultAsync();
     }
 }
 

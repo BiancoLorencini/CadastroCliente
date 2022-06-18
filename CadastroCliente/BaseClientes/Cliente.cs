@@ -4,13 +4,13 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace CadastroCliente.BaseClientes
 {
-    public class cliente
+    public class Cliente
     {
         [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
+        //[BsonRepresentation(BsonType.ObjectId)]
 
         [BsonElement("Id")]
-        public string? Id { get;  set; }
+        public int Id {  get; set; }
 
         [BsonElement("Nome")]
         public string Nome { get; set; } = null;
@@ -29,7 +29,5 @@ namespace CadastroCliente.BaseClientes
 
         [BsonElement("Status")]
         public bool Status { get; set; }
-
-       
     }
 }
